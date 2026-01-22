@@ -4,6 +4,11 @@
     <string name="navigation_drawer_open" translatable="false">Open navigation drawer</string>
     <string name="navigation_drawer_close" translatable="false">Close navigation drawer</string>
 
+    <string name="emulator_background_channel_name">J2ME Loader</string>
+    <string name="emulator_background_channel_description">Keeps the emulator running in background</string>
+    <string name="emulator_background_notification_title">J2ME Loader is running</string>
+    <string name="emulator_background_notification_text">Game is active in background</string>
+
     <string name="close">Close</string>
     <string name="exit">Exit</string>
     <string name="about">About</string>

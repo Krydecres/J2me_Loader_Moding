@@ -5,7 +5,7 @@ plugins {
 def midletArchivesBaseName
 
 android {
-    compileSdk COMPILE_SDK
+    compileSdk 34
     ndkVersion NDK_VERSION
     namespace 'ru.playsoftware.j2meloader'
 
@@ -13,11 +13,13 @@ android {
         applicationId "ru.playsoftware.j2meloader"
         minSdk MIN_SDK
         targetSdk TARGET_SDK
+        multiDexEnabled true
         versionCode 101
         versionName "1.8.2"
         resValue 'string', 'app_name', rootProject.name
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
     }
 
     signingConfigs {
@@ -40,8 +42,8 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             signingConfig signingConfigs.release
         }
         debug {

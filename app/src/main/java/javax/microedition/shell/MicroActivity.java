@@ -87,6 +87,8 @@ import ru.playsoftware.j2meloader.databinding.ActivityMicroBinding;
 import ru.playsoftware.j2meloader.util.Constants;
 import ru.playsoftware.j2meloader.util.LogUtils;
 
+import ru.playsoftware.j2meloader.EmulatorBackgroundService;
+
 public class MicroActivity extends AppCompatActivity {
 	private static final int ORIENTATION_DEFAULT = 0;
 	private static final int ORIENTATION_AUTO = 1;
@@ -105,11 +107,21 @@ public class MicroActivity extends AppCompatActivity {
 
 	public ActivityMicroBinding binding;
 
+	private static boolean isExiting = false;
+	private static boolean isMidletRunning = false;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		lockNightMode();
 		super.onCreate(savedInstanceState);
 		ContextHolder.setCurrentActivity(this);
+
+		Intent serviceIntent = new Intent(this, EmulatorBackgroundService.class);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			startForegroundService(serviceIntent);
+		} else {
+			startService(serviceIntent);
+		}
 
 		binding = ActivityMicroBinding.inflate(getLayoutInflater());
 		View view = binding.getRoot();
@@ -205,14 +217,21 @@ public class MicroActivity extends AppCompatActivity {
 	public void onResume() {
 		super.onResume();
 		visible = true;
-		MidletThread.resumeApp();
+		// Chỉ resume nếu game đang chạy và không phải trạng thái đang thoát
+		if (isMidletRunning && !isExiting) {
+			MidletThread.resumeApp();
+		}
 	}
 
 	@Override
 	public void onPause() {
 		visible = false;
 		hideSoftInput();
-		MidletThread.pauseApp();
+		// QUAN TRỌNG: Chỉ pause game nếu người dùng KHÔNG chủ động thoát
+		// và nếu MIDlet thực sự đang chạy
+		if (!isExiting && isMidletRunning) {
+			MidletThread.pauseApp();
+		}
 		super.onPause();
 	}
 
@@ -347,6 +366,7 @@ public class MicroActivity extends AppCompatActivity {
 				.setMessage(R.string.FORCE_CLOSE_CONFIRMATION)
 				.setPositiveButton(android.R.string.ok, (d, w) -> {
 					hideSoftInput();
+					isExiting = true; // Đánh dấu là người dùng chủ động thoát
 					MidletThread.destroyApp();
 				})
 				.setNeutralButton(R.string.action_settings, (d, w) -> {
@@ -702,6 +722,12 @@ public class MicroActivity extends AppCompatActivity {
 
 	@Override
 	protected void onDestroy() {
+		// Chỉ dừng Service nếu người dùng chủ động thoát
+		if (isExiting) {
+			Intent serviceIntent = new Intent(this, EmulatorBackgroundService.class);
+			stopService(serviceIntent);
+			isExiting = false; // Reset cờ cho lần chạy sau
+		}
 		binding = null;
 		super.onDestroy();
 	}

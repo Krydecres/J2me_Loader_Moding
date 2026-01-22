@@ -22,6 +22,16 @@
 
     <uses-sdk tools:overrideLibrary="com.arthenica.mobileffmpeg" />
 
+    <!-- Thêm các dòng này -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <!-- Quan trọng cho Android 9+ để Service chạy nền -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Khuyến nghị cho Android 12+ nếu cần truy cập vị trí chính xác cho Wifi -->
+
+
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
@@ -118,12 +128,12 @@
             android:name=".config.ConfigActivity"
             android:exported="true"
             android:windowSoftInputMode="stateHidden" />
-        <activity
-            android:name="javax.microedition.shell.MicroActivity"
+        <activity android:name="javax.microedition.shell.MicroActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar"
-            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|uiMode"
-            android:process=":midlet" />
+            android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|density|uiMode"
+            android:process=":midlet"
+            android:launchMode="singleInstance" />
         <activity android:name=".settings.SettingsActivity"
             android:exported="false">
             <intent-filter>
@@ -162,6 +172,14 @@
         <receiver
             android:name="com.nokia.mid.ui.NotificationBroadcastReceiver"
             android:process=":midlet" />
+
+        <!-- Đặt đoạn này gần khai báo MicroActivity -->
+        <service
+            android:name=".EmulatorBackgroundService"
+            android:exported="false"
+            android:process=":midlet"
+            android:foregroundServiceType="connectedDevice"
+            tools:targetApi="q" />
     </application>
 
 </manifest>
