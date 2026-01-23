@@ -116,13 +116,6 @@ public class MicroActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		ContextHolder.setCurrentActivity(this);
 
-		Intent serviceIntent = new Intent(this, EmulatorBackgroundService.class);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			startForegroundService(serviceIntent);
-		} else {
-			startService(serviceIntent);
-		}
-
 		binding = ActivityMicroBinding.inflate(getLayoutInflater());
 		View view = binding.getRoot();
 		setContentView(view);
@@ -204,6 +197,7 @@ public class MicroActivity extends AppCompatActivity {
 		}
 	}
 
+
 	public void lockNightMode() {
 		int current = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
 		if (current == Configuration.UI_MODE_NIGHT_YES) {
@@ -279,6 +273,9 @@ public class MicroActivity extends AppCompatActivity {
 			throw new Exception("No MIDlets found");
 		} else if (size == 1) {
 			MidletThread.create(microLoader, midletsClassArray[0]);
+			isMidletRunning = true; // Bạn đã thêm
+			// THÊM: Khởi động Service khi game thực sự bắt đầu
+			startBackgroundService(); // (Bạn cần tạo phương thức này)
 		} else {
 			showMidletDialog(midletsNameArray, midletsClassArray);
 		}
@@ -298,6 +295,9 @@ public class MicroActivity extends AppCompatActivity {
 					sb.append("Begin app: ").append(names[n]).append(", ").append(clazz);
 					errorReporter.putCustomData(Constants.KEY_APPCENTER_ATTACHMENT, sb.toString());
 					MidletThread.create(microLoader, clazz);
+					isMidletRunning = true; // Bạn đã thêm
+					// THÊM: Khởi động Service khi game thực sự bắt đầu
+					startBackgroundService();
 					MidletThread.resumeApp();
 				})
 				.setOnCancelListener(d -> {
@@ -740,6 +740,14 @@ public class MicroActivity extends AppCompatActivity {
 				LocationProviderImpl.permissionLock.notify();
 			}
 			LocationProviderImpl.permissionResult = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+		}
+	}
+	private void startBackgroundService() {
+		Intent serviceIntent = new Intent(this, EmulatorBackgroundService.class);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			startForegroundService(serviceIntent);
+		} else {
+			startService(serviceIntent);
 		}
 	}
 }
