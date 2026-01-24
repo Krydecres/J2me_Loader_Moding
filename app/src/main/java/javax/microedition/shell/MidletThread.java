@@ -54,6 +54,9 @@ public class MidletThread extends HandlerThread implements Handler.Callback {
 	private final Handler handler;
 	private int state;
 
+    private static final int SOFT_PAUSE = 4;
+    private static final int SOFT_RESUME = 5;
+
 	private MidletThread(MicroLoader microLoader, String mainClass) {
 		super("MidletMain");
 		this.microLoader = microLoader;
@@ -181,7 +184,33 @@ public class MidletThread extends HandlerThread implements Handler.Callback {
 				}
 				notifyDestroyed();
 				break;
+            case SOFT_PAUSE:
+                // Chỉ đánh dấu state, không gọi pauseApp()
+                if (state == STARTED) {
+                    state = PAUSED;
+                    Log.d(TAG, "Soft pause - MIDlet logic continues");
+                }
+                break;
+
+            case SOFT_RESUME:
+                // Resume nhanh không cần gọi startApp()
+                if (state == PAUSED) {
+                    state = STARTED;
+                    Log.d(TAG, "Soft resume - instant restore");
+                }
+                break;
 		}
 		return true;
 	}
+    public static void softPauseApp() {
+        if (instance != null)
+            instance.handler.obtainMessage(SOFT_PAUSE).sendToTarget();
+    }
+
+    public static void softResumeApp() {
+        MicroActivity activity = ContextHolder.getActivity();
+        if (instance != null && activity != null) {
+            instance.handler.obtainMessage(SOFT_RESUME).sendToTarget();
+        }
+    }
 }

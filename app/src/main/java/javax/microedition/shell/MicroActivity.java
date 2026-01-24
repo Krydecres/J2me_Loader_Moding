@@ -110,6 +110,7 @@ public class MicroActivity extends AppCompatActivity {
 	public static boolean isExiting = false;
 	public static boolean isMidletRunning = false;
 
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		lockNightMode();
@@ -211,20 +212,43 @@ public class MicroActivity extends AppCompatActivity {
 	public void onResume() {
 		super.onResume();
 		visible = true;
-		// Chỉ resume nếu game đang chạy và không phải trạng thái đang thoát
-		if (current instanceof Canvas && isMidletRunning && !isExiting) {
-			binding.displayableContainer.postDelayed(new Runnable() {
-				@Override
-				public void run() {
-					if (isMidletRunning && !isExiting) {
-						MidletThread.resumeApp();
-					}
-				}
-			}, 100); // Delay 100ms
-		} else if (isMidletRunning && !isExiting) {
-			// Nếu không phải Canvas, resume ngay
-			MidletThread.resumeApp();
-		}
+        isExiting = false;
+
+        if (current instanceof Canvas && isMidletRunning) {
+            // KHÔNG DELAY - resume ngay lập tức
+            MidletThread.resumeApp();
+
+            // ĐẢM BẢO Canvas nhận được sự kiện show
+            if (current != null) {
+                // Gọi trực tiếp để kích hoạt vẽ
+                binding.displayableContainer.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Yêu cầu focus và vẽ lại
+                        binding.displayableContainer.requestFocus();
+                        binding.displayableContainer.invalidate();
+
+                        // Nếu là Canvas, ép repaint
+                        if (current instanceof Canvas) {
+                            Canvas canvas = (Canvas) current;
+                            canvas.repaint();
+
+                            // Double kickstart sau 50ms để đảm bảo
+                            binding.displayableContainer.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (current instanceof Canvas) {
+                                        ((Canvas) current).repaint();
+                                    }
+                                }
+                            }, 50);
+                        }
+                    }
+                });
+            }
+        } else if (isMidletRunning) {
+            MidletThread.resumeApp();
+        }
 	}
 
 	@Override
@@ -234,7 +258,7 @@ public class MicroActivity extends AppCompatActivity {
 		// QUAN TRỌNG: Chỉ pause game nếu người dùng KHÔNG chủ động thoát
 		// và nếu MIDlet thực sự đang chạy
 		if (!isExiting && isMidletRunning) {
-			MidletThread.pauseApp();
+//			MidletThread.pauseApp();
 		}
 		super.onPause();
 	}
@@ -760,4 +784,5 @@ public class MicroActivity extends AppCompatActivity {
 			startService(serviceIntent);
 		}
 	}
+
 }

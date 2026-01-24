@@ -98,6 +98,8 @@ public abstract class Canvas extends Displayable {
 	public static final int KEY_NUM8 = 56;
 	public static final int KEY_NUM9 = 57;
 
+    private boolean needsFrameKickstart = false;
+    private long lastResumeTime = 0;
 	public static final int KEY_UP = -1;
 	public static final int KEY_DOWN = -2;
 	public static final int KEY_LEFT = -3;
@@ -1189,6 +1191,7 @@ public abstract class Canvas extends Displayable {
 						width,
 						height));
 				repaintInternal();
+                kickstartFrame();
 				sizeChangedCalled = true;
 			}
 		}
@@ -1199,20 +1202,29 @@ public abstract class Canvas extends Displayable {
 				renderer.start();
 			}
 			surface = holder.getSurface();
-			Display.postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.SHOW_NOTIFY));
-			new Handler(Looper.getMainLooper()).post(new Runnable() {
-				@Override
-				public void run() {
-					// Kiểm tra thông qua ContextHolder thay vì binding trực tiếp
-					MicroActivity activity = ContextHolder.getActivity();
-					if (activity != null && MidletThread.instance != null) {
-						// Gọi resumeApp. Phương thức này đã có kiểm tra bên trong.
-						MidletThread.resumeApp();
-					}
-					// Đồng thời, yêu cầu repaint toàn bộ màn hình
-					repaintInternal();
-				}
-			});
+            needsFrameKickstart = true;
+            lastResumeTime = System.currentTimeMillis();
+
+            if (!visible) {
+                visible = true;
+                Display.postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.SHOW_NOTIFY));
+            }
+
+            // YÊU CẦU VẼ LẠI TOÀN BỘ MÀN HÌNH NGAY LẬP TỨC
+            repaintInternal();
+
+            // THÊM: Ép vẽ một frame ngay lập tức, bất kể repaint() có được gọi hay không
+            kickstartFrame();
+
+            new android.os.Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    MicroActivity activity = ContextHolder.getActivity();
+                    if (activity != null && MidletThread.instance != null) {
+                        MidletThread.resumeApp();
+                    }
+                }
+            });
 			if (showFps) {
 				fpsCounter = new FpsCounter(overlayView);
 				overlayView.addLayer(fpsCounter);
@@ -1224,6 +1236,24 @@ public abstract class Canvas extends Displayable {
 				overlay.setTarget(Canvas.this);
 			}
 		}
+
+        private void kickstartFrame() {
+            // Đảm bảo có ít nhất MỘT frame được vẽ ngay sau resume
+            if (graphicsMode == 1 && renderer != null) {
+                // OpenGL mode: request render trực tiếp
+                renderer.requestRender();
+            } else if (graphicsMode == 2) {
+                // Canvas mode: invalidate view
+                if (innerView != null) {
+                    innerView.postInvalidate();
+                }
+            } else if (graphicsMode == 0 || graphicsMode == 3) {
+                // Software mode: vẽ trực tiếp nếu có surface
+                if (surface != null && surface.isValid()) {
+                    repaintScreen();
+                }
+            }
+        }
 
 		@Override
 		public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
@@ -1252,6 +1282,10 @@ public abstract class Canvas extends Displayable {
 	}
 
 	private void requestFlushToScreen() {
+        if (needsFrameKickstart) {
+            // Đã có frame được vẽ, tắt cờ kickstart
+            needsFrameKickstart = false;
+        }
 		if (graphicsMode == 1) {
 			if (innerView != null) {
 				renderer.requestRender();
@@ -1438,3 +1472,4 @@ public abstract class Canvas extends Displayable {
 		}
 	}
 }
+
