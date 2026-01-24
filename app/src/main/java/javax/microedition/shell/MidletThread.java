@@ -47,7 +47,7 @@ public class MidletThread extends HandlerThread implements Handler.Callback {
 	private static final int PAUSED = 2;
 	private static final int DESTROYED = 3;
 	public static String[] startAfterDestroy;
-	private static MidletThread instance;
+	public static MidletThread instance;
 	private final MicroLoader microLoader;
 	private final String mainClass;
 	private MIDlet midlet;
@@ -93,8 +93,9 @@ public class MidletThread extends HandlerThread implements Handler.Callback {
 
 	public static void resumeApp() {
 		MicroActivity activity = ContextHolder.getActivity();
-		if (instance != null && activity != null && activity.isVisible())
+		if (instance != null && activity != null) {
 			instance.handler.obtainMessage(START).sendToTarget();
+		}
 	}
 
 	static void destroyApp() {

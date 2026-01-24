@@ -107,8 +107,8 @@ public class MicroActivity extends AppCompatActivity {
 
 	public ActivityMicroBinding binding;
 
-	private static boolean isExiting = false;
-	private static boolean isMidletRunning = false;
+	public static boolean isExiting = false;
+	public static boolean isMidletRunning = false;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -212,7 +212,17 @@ public class MicroActivity extends AppCompatActivity {
 		super.onResume();
 		visible = true;
 		// Chỉ resume nếu game đang chạy và không phải trạng thái đang thoát
-		if (isMidletRunning && !isExiting) {
+		if (current instanceof Canvas && isMidletRunning && !isExiting) {
+			binding.displayableContainer.postDelayed(new Runnable() {
+				@Override
+				public void run() {
+					if (isMidletRunning && !isExiting) {
+						MidletThread.resumeApp();
+					}
+				}
+			}, 100); // Delay 100ms
+		} else if (isMidletRunning && !isExiting) {
+			// Nếu không phải Canvas, resume ngay
 			MidletThread.resumeApp();
 		}
 	}

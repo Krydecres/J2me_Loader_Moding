@@ -73,6 +73,7 @@ import javax.microedition.lcdui.overlay.Layer;
 import javax.microedition.lcdui.overlay.Overlay;
 import javax.microedition.lcdui.overlay.OverlayView;
 import javax.microedition.shell.MicroActivity;
+import javax.microedition.shell.MidletThread;
 import javax.microedition.util.ContextHolder;
 
 import io.reactivex.Single;
@@ -1199,7 +1200,19 @@ public abstract class Canvas extends Displayable {
 			}
 			surface = holder.getSurface();
 			Display.postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.SHOW_NOTIFY));
-			repaintInternal();
+			new Handler(Looper.getMainLooper()).post(new Runnable() {
+				@Override
+				public void run() {
+					// Kiểm tra thông qua ContextHolder thay vì binding trực tiếp
+					MicroActivity activity = ContextHolder.getActivity();
+					if (activity != null && MidletThread.instance != null) {
+						// Gọi resumeApp. Phương thức này đã có kiểm tra bên trong.
+						MidletThread.resumeApp();
+					}
+					// Đồng thời, yêu cầu repaint toàn bộ màn hình
+					repaintInternal();
+				}
+			});
 			if (showFps) {
 				fpsCounter = new FpsCounter(overlayView);
 				overlayView.addLayer(fpsCounter);
