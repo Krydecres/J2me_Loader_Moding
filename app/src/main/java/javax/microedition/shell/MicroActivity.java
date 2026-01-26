@@ -172,7 +172,7 @@ public class MicroActivity extends AppCompatActivity {
 		MidletSystem.setProperty("com.nokia.mid.cmdline.instance", "1");
 		microLoader = new MicroLoader(this, appPath);
 		if (!microLoader.init()) {
-			Config.startApp(this, appName, appPath, true, arguments);
+//			Config.startApp(this, appName, appPath, true, arguments);
 			finish();
 			return;
 		}

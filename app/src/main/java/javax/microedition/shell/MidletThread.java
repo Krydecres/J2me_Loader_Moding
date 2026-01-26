@@ -140,6 +140,11 @@ public class MidletThread extends HandlerThread implements Handler.Callback {
 				}
 				break;
 			case START:
+				if (midlet == null) {
+					Log.e(TAG, "Cannot start: midlet is null");
+					state = STARTED; // Vẫn đánh dấu đã start
+					break;
+				}
 				if (state != PAUSED) {
 					break;
 				}
@@ -150,11 +155,15 @@ public class MidletThread extends HandlerThread implements Handler.Callback {
 					state = PAUSED;
 					Log.w(TAG, "Midlet doesn't want to start!", e);
 				} catch (Throwable t) {
-					state = DESTROYED;
 					throw new RuntimeException("Failed startApp", t);
 				}
 				break;
 			case PAUSE:
+				if (midlet == null) {
+					Log.e(TAG, "Cannot pause: midlet is null");
+					state = PAUSED;
+					break;
+				}
 				if (state != STARTED) {
 					break;
 				}
@@ -162,7 +171,6 @@ public class MidletThread extends HandlerThread implements Handler.Callback {
 					midlet.pauseApp();
 					state = PAUSED;
 				} catch (Throwable t) {
-					state = DESTROYED;
 					try {
 						midlet.destroyApp(true);
 					} catch (MIDletStateChangeException ignored) {}
@@ -170,6 +178,12 @@ public class MidletThread extends HandlerThread implements Handler.Callback {
 				}
 				break;
 			case DESTROY:
+				if (midlet == null) {
+					Log.e(TAG, "Cannot destroy: midlet is null");
+					state = DESTROYED;
+					notifyDestroyed();
+					break;
+				}
 				if (state == DESTROYED) {
 					notifyDestroyed();
 					break;
